@@ -1,0 +1,3 @@
+fastapi[standard] # FastAPI with standard dependencies
+uvicorn[standard]  # Uvicorn with standard dependencies for ASGI server
+sqlalchemy  # SQLAlchemy for database interactions
