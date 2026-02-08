@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+
 class FoodBase(BaseModel):
     name: str = Field(..., examples=["Apple"])
     calories: int = Field(..., ge=0, examples=[95])
