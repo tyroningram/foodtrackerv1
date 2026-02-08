@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from typing import Any
+
+from .schemas.food import FoodCreate, FoodUpdate
 
 app = FastAPI()
 
@@ -15,13 +17,12 @@ test_data = {
     },
 }
 
-
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the Food Tracker API!"}
 
 
-@app.get("/database")
+@app.get("/foods")
 async def read_database():
     return test_data
 
@@ -32,21 +33,21 @@ async def read_food(food_id: int | None = None) -> dict[str, Any]:
     if food_item:
         return food_item
     else:
-        return {"error": "Food item not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Food item not found")
 
 
 @app.post("/food")
-async def add_food(body: dict[str, Any]) -> dict[str, Any]:
+async def add_food(body: FoodCreate) -> dict[str, Any]:
 
     food_id = max(test_data.keys()) + 1
-    name = body.get("name")
-    calories = body.get("calories")
-    carbs = body.get("carbs")
-    protein = body.get("protein")
-    fat = body.get("fat")
+    name = body.name
+    calories = body.calories
+    carbs = body.carbs
+    protein = body.protein
+    fat = body.fat
 
     if food_id in test_data:
-        return {"error": "Food item with this ID already exists"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Food item with this ID already exists")
 
     test_data[food_id] = {
         "name": name,
@@ -67,17 +68,17 @@ async def delete_food(food_id: int) -> dict[str, Any]:
             "deleted_item": deleted_item,
         }
     else:
-        return {"error": "Food item not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Food item not found")
 
 
 @app.put("/food")
-async def update_food(food_id: int, body: dict[str, Any]) -> dict[str, Any]:
+async def update_food(food_id: int, body: FoodUpdate) -> dict[str, Any]:
     if food_id in test_data:
-        name = body.get("name")
-        calories = body.get("calories")
-        carbs = body.get("carbs")
-        protein = body.get("protein")
-        fat = body.get("fat")
+        name = body.name
+        calories = body.calories
+        carbs = body.carbs
+        protein = body.protein
+        fat = body.fat
 
         test_data[food_id] = {
             "name": name,
@@ -91,5 +92,31 @@ async def update_food(food_id: int, body: dict[str, Any]) -> dict[str, Any]:
             "food_item": test_data[food_id],
         }
     else:
-        return {"error": "Food item not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Food item not found")
+    
+
+@app.patch("/food")
+async def patch_food(food_id: int, body: FoodUpdate) -> dict[str, Any]:
+    if food_id in test_data:
+        food_item = test_data[food_id]
+
+        name = body.name if body.name is not None else food_item["name"]
+        calories = body.calories if body.calories is not None else food_item["calories"]
+        carbs = body.carbs if body.carbs is not None else food_item["carbs"]
+        protein = body.protein if body.protein is not None else food_item["protein"]
+        fat = body.fat if body.fat is not None else food_item["fat"]
+
+        test_data[food_id] = {
+            "name": name,
+            "calories": calories,
+            "carbs": carbs,
+            "protein": protein,
+            "fat": fat,
+        }
+        return {
+            "message": "Food item patched successfully",
+            "food_item": test_data[food_id],
+        }
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Food item not found")
 
